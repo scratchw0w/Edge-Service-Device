@@ -1,5 +1,6 @@
 package com.scratchy;
 
+import org.springframework.boot.Banner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -7,7 +8,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class EdgeApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(EdgeApplication.class, args);
+        SpringApplication springApplication = new SpringApplication(EdgeApplication.class);
+        springApplication.setBannerMode(Banner.Mode.OFF);
+        springApplication.run(args);
     }
 
 }
