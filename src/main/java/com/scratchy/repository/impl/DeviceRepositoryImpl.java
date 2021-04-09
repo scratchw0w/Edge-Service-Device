@@ -1,7 +1,7 @@
 package com.scratchy.repository.impl;
 
 import com.scratchy.model.Device;
-import com.scratchy.repository.DeviceDao;
+import com.scratchy.repository.DeviceRepository;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +13,7 @@ import java.util.Optional;
 
 @Repository
 @Transactional
-public class DeviceDaoImpl implements DeviceDao {
+public class DeviceRepositoryImpl implements DeviceRepository {
 
     private EntityManager entityManager;
 

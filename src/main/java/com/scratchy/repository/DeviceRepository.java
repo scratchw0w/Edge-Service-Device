@@ -4,7 +4,7 @@ import com.scratchy.model.Device;
 
 import java.util.Optional;
 
-public interface DeviceDao {
+public interface DeviceRepository {
 
     Optional<Iterable<Device>> getDeviceList();
 
