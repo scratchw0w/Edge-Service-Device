@@ -12,11 +12,11 @@ public interface DeviceService {
 
     ResponseEntity<Iterable<Device>> getDeviceListByModelInJson(String model);
 
-    void getDeviceListByModelInCsv(String model);
+    String getDeviceListByModelInCsv(String model);
 
     Iterable<Device> createDevicesFromCsvFile(MultipartFile file);
 
-    void sendEmail(String email);
+    void sendEmail();
 
     Iterable<DeviceFileDto> getListOfUploadedFiles();
 }

@@ -7,19 +7,19 @@ import com.scratchy.repository.DeviceFileRepository;
 import com.scratchy.service.DeviceService;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -30,6 +30,7 @@ public class DeviceServiceImpl implements DeviceService {
 
     private final WebClient webClient;
     private DeviceFileRepository repository;
+    private JavaMailSender emailSender;
 
     public DeviceServiceImpl(EnvironmentConfig config) {
         this.webClient = WebClient.builder()
@@ -40,6 +41,11 @@ public class DeviceServiceImpl implements DeviceService {
     @Autowired
     public void setRepository(DeviceFileRepository repository) {
         this.repository = repository;
+    }
+
+    @Autowired
+    public void setEmailSender(JavaMailSender emailSender) {
+        this.emailSender = emailSender;
     }
 
     @Override
@@ -56,8 +62,27 @@ public class DeviceServiceImpl implements DeviceService {
     }
 
     @Override
-    public void getDeviceListByModelInCsv(String model) {
+    public String getDeviceListByModelInCsv(String model) {
+        List<Device> deviceList = getDeviceListByModel(model);
+        StringBuilder builder = new StringBuilder();
 
+        try (CSVPrinter printer = new CSVPrinter(builder,
+                CSVFormat.DEFAULT.withHeader("id", "model", "description"))) {
+            deviceList.forEach(value -> {
+                try {
+                    printer.printRecord(value.getId(), value.getModel(),
+                            value.getDescription());
+                } catch (IOException exception) {
+                    throw new RuntimeException("During printing record something went wrong..",
+                            exception);
+                }
+            });
+        } catch (IOException exception) {
+            throw new RuntimeException("During creating csv something went wrong..",
+                    exception);
+        }
+
+        return builder.toString();
     }
 
     private List<Device> getDeviceListByModel(String model) {
@@ -66,10 +91,9 @@ public class DeviceServiceImpl implements DeviceService {
                 .uri("/api/devices")
                 .retrieve()
                 .toEntityList(Device.class)
-                .block())
-                .getBody();
+                .block()).getBody();
 
-        return Objects.requireNonNull(deviceList)
+        return deviceList
                 .stream()
                 .filter(value -> value.getModel().equals(model))
                 .collect(Collectors.toList());
@@ -120,8 +144,12 @@ public class DeviceServiceImpl implements DeviceService {
     }
 
     @Override
-    public void sendEmail(String email) {
-
+    public void sendEmail() {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo("xa12850449@student.karazin.ua");
+        message.setSubject("CSV was uploaded");
+        message.setText("Your csv file was successfully uploaded");
+        emailSender.send(message);
     }
 
     @Override

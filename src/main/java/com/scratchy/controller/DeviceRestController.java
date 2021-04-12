@@ -10,17 +10,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
-import java.util.List;
 
 @Slf4j
 @RestController
 @AllArgsConstructor
 @RequestMapping("/rest")
 public class DeviceRestController {
-
-    private static final String EMAIL = "test_mail@some.com";
 
     private final DeviceService service;
 
@@ -37,12 +32,11 @@ public class DeviceRestController {
         return service.getDeviceListByModelInJson(model);
     }
 
-    @GetMapping("/devices/csv/{model}")
-    public Mono<ResponseEntity<List<Device>>> getDeviceListByModelInCsv(
+    @GetMapping(value = "/devices/csv/{model}", produces = "text/csv")
+    public ResponseEntity<String> getDeviceListByModelInCsv(
             @PathVariable("model") String model) {
         log.info("Getting devices by model in csv format");
-        service.getDeviceListByModelInCsv(model);
-        return null;
+        return ResponseEntity.ok(service.getDeviceListByModelInCsv(model));
     }
 
     @PostMapping(value = "/devices")
@@ -50,8 +44,8 @@ public class DeviceRestController {
             @RequestParam("file") MultipartFile file) {
         log.info("Creating devices from csv file - " + file.getOriginalFilename());
         Iterable<Device> deviceList = service.createDevicesFromCsvFile(file);
-        log.info("Sending success email to " + EMAIL);
-        service.sendEmail(EMAIL);
+        log.info("Sending success email");
+        service.sendEmail();
         return ResponseEntity.ok(deviceList);
     }
 

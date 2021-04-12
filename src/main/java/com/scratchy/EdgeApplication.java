@@ -12,5 +12,4 @@ public class EdgeApplication {
         springApplication.setBannerMode(Banner.Mode.OFF);
         springApplication.run(args);
     }
-
 }
