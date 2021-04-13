@@ -4,11 +4,10 @@ import com.scratchy.model.Device;
 import com.scratchy.model.DeviceFileDto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
-import reactor.core.publisher.Flux;
 
 public interface DeviceService {
 
-    Flux<Device> getDeviceBySerialNumber(String serialNumber);
+    ResponseEntity<Device> getDeviceBySerialNumber(String serialNumber);
 
     ResponseEntity<Iterable<Device>> getDeviceListByModelInJson(String model);
 

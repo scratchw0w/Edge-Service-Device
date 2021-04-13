@@ -16,7 +16,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Flux;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
 import java.io.*;
@@ -49,11 +49,19 @@ public class DeviceServiceImpl implements DeviceService {
     }
 
     @Override
-    public Flux<Device> getDeviceBySerialNumber(String serialNumber) {
-        return webClient.get()
-                .uri("/api/devices/" + serialNumber)
-                .retrieve()
-                .bodyToFlux(Device.class);
+    public ResponseEntity<Device> getDeviceBySerialNumber(String serialNumber) {
+        Device device;
+        try {
+            device = webClient.get()
+                    .uri("/api/devices/" + serialNumber)
+                    .retrieve()
+                    .bodyToMono(Device.class)
+                    .block();
+        } catch (WebClientResponseException exception) {
+            return ResponseEntity.status(exception.getStatusCode()).body(null);
+        }
+
+        return ResponseEntity.ok(device);
     }
 
     @Override
@@ -146,7 +154,7 @@ public class DeviceServiceImpl implements DeviceService {
     @Override
     public void sendEmail() {
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo("xa12850449@student.karazin.ua");
+        message.setTo("some_mail@test.mail");
         message.setSubject("CSV was uploaded");
         message.setText("Your csv file was successfully uploaded");
         emailSender.send(message);

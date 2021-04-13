@@ -1,0 +1,19 @@
+version: "3.8"
+services:
+  postgres:
+    container_name: 'edge-db'
+    image: postgres:latest
+    environment:
+      POSTGRES_PASSWORD: password
+    ports:
+      - 5432:5432
+
+  myapp:
+    container_name: 'edge-service'
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    links:
+      - postgres
