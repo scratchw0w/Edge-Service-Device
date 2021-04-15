@@ -9,6 +9,8 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
+import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
+import org.keycloak.representations.AccessToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +25,7 @@ import reactor.core.publisher.Mono;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -111,7 +114,7 @@ public class DeviceServiceImpl implements DeviceService {
     }
 
     @Override
-    public Iterable<Device> createDevicesFromCsvFile(MultipartFile file) {
+    public Iterable<Device> createDevicesFromCsvFile(MultipartFile file, Principal principal) {
         List<Device> devices;
         try {
             devices = parseCsvFile(file);
@@ -122,7 +125,7 @@ public class DeviceServiceImpl implements DeviceService {
 
         postDeviceListToUri(devices);
         DeviceFileDto fileDto = new DeviceFileDto(file.getOriginalFilename(),
-                devices.size());
+                devices.size(), principal.getName());
         repository.save(fileDto);
         return devices;
     }

@@ -15,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.security.Principal;
+
 @Slf4j
 @RestController
 @AllArgsConstructor
@@ -26,7 +28,8 @@ public class DeviceRestController {
     @Operation(summary = "Getting existing device by id")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Device was found",
             content = {@Content(mediaType = "application/json", schema = @Schema(implementation = Device.class))}),
-            @ApiResponse(responseCode = "404", description = "Device was not found")})
+            @ApiResponse(responseCode = "404", description = "Device was not found",
+                    content = {@Content(mediaType = "application/json")})})
     @GetMapping("/devices/{id}")
     public ResponseEntity<Device> getDeviceById(@PathVariable("id") String id) {
         log.info("Getting device by id: " + id);
@@ -54,12 +57,13 @@ public class DeviceRestController {
     }
 
     @Operation(summary = "Creating new devices from a csv file")
-    @ApiResponse(responseCode = "204", description = "Devices were successfully created")
+    @ApiResponse(responseCode = "204", description = "Devices were successfully created",
+            content = {@Content(mediaType = "application/json")})
     @PostMapping(value = "/devices")
     public ResponseEntity<Iterable<Device>> creatingDevicesFromCsvFile(
-            @RequestParam("file") MultipartFile file) {
+            @RequestParam("file") MultipartFile file, Principal principal) {
         log.info("Creating devices from csv file - " + file.getOriginalFilename());
-        Iterable<Device> deviceList = service.createDevicesFromCsvFile(file);
+        Iterable<Device> deviceList = service.createDevicesFromCsvFile(file, principal);
         log.info("Sending success email");
         service.sendEmail();
         return ResponseEntity.status(HttpStatus.CREATED).body(deviceList);

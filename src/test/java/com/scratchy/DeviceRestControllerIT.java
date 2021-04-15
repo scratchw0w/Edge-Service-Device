@@ -104,7 +104,7 @@ public class DeviceRestControllerIT {
 
     @Test
     public void shouldReturnOkAndOneRecord() {
-        DeviceFileDto fileDto = new DeviceFileDto("file.csv", 1);
+        DeviceFileDto fileDto = new DeviceFileDto("file.csv", 1, "user");
         fileDto.setDateOfUploading(LocalDateTime.of(1, 1, 1, 1, 1));
         repository.save(fileDto);
         ResponseEntity<Iterable<DeviceFileDto>> responseEntity = this.restTemplate

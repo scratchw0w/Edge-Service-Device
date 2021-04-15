@@ -2,6 +2,7 @@ package com.scratchy.config;
 
 import org.keycloak.adapters.springboot.KeycloakSpringBootConfigResolver;
 import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationProvider;
+import org.keycloak.adapters.springsecurity.config.KeycloakWebSecurityConfigurerAdapter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,7 +18,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @Configuration
 @EnableWebSecurity
 @EnableSwagger2
-public class SecurityConfig extends org.keycloak.adapters.springsecurity.config.KeycloakWebSecurityConfigurerAdapter {
+public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
 
     @Autowired
     public void configureGlobal(AuthenticationManagerBuilder auth) {
@@ -47,5 +48,7 @@ public class SecurityConfig extends org.keycloak.adapters.springsecurity.config.
                 .hasRole("admin")
                 .anyRequest()
                 .permitAll();
+
+        http.csrf().disable();
     }
 }

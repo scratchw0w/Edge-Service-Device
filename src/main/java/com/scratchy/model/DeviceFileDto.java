@@ -21,9 +21,13 @@ public class DeviceFileDto {
     @Column(updatable = false)
     private LocalDateTime dateOfUploading;
 
-    public DeviceFileDto(String fileName, int deviceCount) {
+    @Column(updatable = false)
+    private String userName;
+
+    public DeviceFileDto(String fileName, int deviceCount, String userName) {
         this.fileName = fileName;
         this.deviceCount = deviceCount;
         this.dateOfUploading = LocalDateTime.now();
+        this.userName = userName;
     }
 }
