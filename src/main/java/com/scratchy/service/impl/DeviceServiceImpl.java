@@ -5,22 +5,24 @@ import com.scratchy.model.Device;
 import com.scratchy.model.DeviceFileDto;
 import com.scratchy.repository.DeviceFileRepository;
 import com.scratchy.service.DeviceService;
+import lombok.extern.slf4j.Slf4j;
+import nonapi.io.github.classgraph.json.JSONSerializer;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
-import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
-import org.keycloak.representations.AccessToken;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import org.springframework.util.concurrent.ListenableFuture;
+import org.springframework.util.concurrent.ListenableFutureCallback;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
-import reactor.core.publisher.Mono;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -32,10 +34,16 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class DeviceServiceImpl implements DeviceService {
 
+    private static final String TOPIC_NAME = "device-topic";
+
     private final WebClient webClient;
+
     private DeviceFileRepository repository;
+    private KafkaTemplate<String, String> kafkaTemplate;
+
     private JavaMailSender emailSender;
 
     public DeviceServiceImpl(EnvironmentConfig config) {
@@ -47,6 +55,11 @@ public class DeviceServiceImpl implements DeviceService {
     @Autowired
     public void setRepository(DeviceFileRepository repository) {
         this.repository = repository;
+    }
+
+    @Autowired
+    public void setKafkaTemplate(KafkaTemplate<String, String> kafkaTemplate) {
+        this.kafkaTemplate = kafkaTemplate;
     }
 
     @Autowired
@@ -122,8 +135,10 @@ public class DeviceServiceImpl implements DeviceService {
             throw new RuntimeException("During parsing an csv file an exception occurred",
                     exception);
         }
+        log.info("Sending device list to " + TOPIC_NAME);
+        sendDeviceList(devices);
 
-        postDeviceListToUri(devices);
+        log.info("Writing new record to the device controller database");
         DeviceFileDto fileDto = new DeviceFileDto(file.getOriginalFilename(),
                 devices.size(), principal.getName());
         repository.save(fileDto);
@@ -144,17 +159,23 @@ public class DeviceServiceImpl implements DeviceService {
         return deviceList;
     }
 
-    private void postDeviceListToUri(List<Device> deviceList) {
-        for (Device device: deviceList) {
-            webClient
-                    .post()
-                    .uri("/api/devices")
-                    .body(Mono.just(device), Device.class)
-                    .accept(MediaType.APPLICATION_JSON)
-                    .retrieve()
-                    .bodyToMono(Device.class)
-                    .block();
-        }
+    private void sendDeviceList(List<Device> deviceList) {
+        ListenableFuture<SendResult<String, String>> future =
+                kafkaTemplate.send(TOPIC_NAME,
+                        JSONSerializer.serializeObject(deviceList.toArray()));
+
+        future.addCallback(new ListenableFutureCallback<>() {
+            @Override
+            public void onFailure(Throwable exception) {
+                throw new RuntimeException("During sending message something went wrong",
+                        exception);
+            }
+
+            @Override
+            public void onSuccess(SendResult<String, String> stringStringSendResult) {
+                log.info("The device list was successfully sent");
+            }
+        });
     }
 
     @Override
